@@ -4,7 +4,10 @@
 #include <iostream>
 
 Application::Application(const std::string& root) : root_path_(root) {
-
+    if (!fs::is_directory(root_path_)) {
+        throw std::runtime_error("Path is not a directory");
+    }
+    LoadSharedLibrary();
 }
 
 Application::~Application() {
@@ -25,7 +28,8 @@ void Application::LoadSharedLibrary() {
 }
 
 void Application::FindImageFiles() {
-
+    for (const auto& dirEntry : fs::recursive_directory_iterator(root_path_))
+        std::cout << dirEntry << std::endl;
 }
 
 void Application::ProcessImages() {
@@ -34,7 +38,6 @@ void Application::ProcessImages() {
 }
 
 void Application::Run() {
-    LoadSharedLibrary();
     FindImageFiles();
     ProcessImages();
 }
