@@ -1,6 +1,9 @@
+find_package(OpenCV 4.5.4 REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+
 add_executable(console_app src/main.cpp src/application.cpp)
 
-target_link_libraries(console_app PRIVATE lib_face_detect_api)
+target_link_libraries(console_app PRIVATE lib_face_detect_api ${OpenCV_LIBS})
 if(UNIX AND NOT APPLE)
     target_link_libraries(console_app PRIVATE dl)
 endif()
