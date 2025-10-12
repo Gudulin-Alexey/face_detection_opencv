@@ -71,5 +71,7 @@ int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
         face_rect_buf[i].w = static_cast<int>(faces.at<float>(i, 2));
         face_rect_buf[i].h = static_cast<int>(faces.at<float>(i, 3));
     }
+    std::cout<<"Img:"<<img_path<<std::endl;
+    std::cout<<"Found faces count: "<<faces.rows<<std::endl;
     return faces.rows;
 }
