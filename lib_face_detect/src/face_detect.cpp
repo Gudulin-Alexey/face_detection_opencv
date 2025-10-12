@@ -1,5 +1,7 @@
 #include "face_detect_api.h"
 
+#include <iostream>
+
 #include <opencv2/objdetect.hpp>
 #include <opencv2/dnn.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -46,14 +48,22 @@ cv::Ptr<cv::FaceDetectorYN>& GetThreadLocalDetector() {
 
 int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
 {
-    cv::Ptr<cv::FaceDetectorYN> detector = GetThreadLocalDetector(); // Use thread_local FaceDetectorYN insted of static so it can be thread save
-    cv::Mat img = cv::imread(img_path);
-
-    detector->setInputSize(img.size()); // Set input size for model instead of resizing img
-    detector->setTopK(buf_size);        // Set max detected boxes
-
     cv::Mat faces;
-    detector->detect(img, faces);
+    try {
+        cv::Ptr<cv::FaceDetectorYN> detector = GetThreadLocalDetector(); // Use thread_local FaceDetectorYN insted of static so it can be thread save
+        cv::Mat img = cv::imread(img_path);
+
+        detector->setInputSize(img.size()); // Set input size for model instead of resizing img
+        detector->setTopK(buf_size);        // Set max detected boxes
+
+        detector->detect(img, faces);
+    } catch (cv::Exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
+        return -1;
+    } catch (const std::exception& e) {
+        std::cerr << "Error: "  << e.what() << std::endl;
+        return -1;
+    }
     for (int i=0; i < faces.rows && i < buf_size; i++) {
         //Fill boundong boxes of detected faces
         face_rect_buf[i].x1 = static_cast<int>(faces.at<float>(i, 0));
