@@ -2,6 +2,7 @@
 #include <dlfcn.h>
 #include <stdexcept>
 #include <iostream>
+#include <algorithm>
 
 Application::Application(const std::string& root) : root_path_(root) {
     if (!fs::is_directory(root_path_)) {
