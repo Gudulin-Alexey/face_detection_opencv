@@ -57,9 +57,6 @@ int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
         detector->setTopK(buf_size);        // Set max detected boxes
 
         detector->detect(img, faces);
-    } catch (cv::Exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return -1;
     } catch (const std::exception& e) {
         std::cerr << "Error: "  << e.what() << std::endl;
         return -1;
