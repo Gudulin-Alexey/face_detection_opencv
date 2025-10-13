@@ -28,7 +28,7 @@ int main(int argc, char** argv) {
         if (root_path.empty()) {
             root_path = fs::current_path().parent_path();
         }
-        if (out_path.empty()) {
+        if (out_path.empty() || out_path == "true") {
             out_path = root_path;
         }
         AppConfig config;

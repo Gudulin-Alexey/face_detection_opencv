@@ -10,7 +10,7 @@
 
 
 Application::Application(const AppConfig& config) : config_(config) {
-    if (!fs::is_directory(config_.root_path)) {
+    if (!fs::is_directory(config_.root_path) || !fs::is_directory(config_.output_path)) {
         throw std::runtime_error("Path is not a directory");
     }
     LoadSharedLibrary();
@@ -60,7 +60,7 @@ void Application::ProcessImages() {
     //using stream writer so not needed to store whole dom in memory in case we parse large amount of images
     Json::StreamWriterBuilder builder;
     const std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
-    std::string result_file_name(config_.root_path.string());
+    std::string result_file_name(config_.output_path.string());
     result_file_name.append("result.json");
     std::ofstream result_file(result_file_name);
     result_file << "{\n\"processed_images\": [\n";      //direct write to open json brackets
@@ -123,7 +123,7 @@ Json::Value Application::ProcessOneImage(const fs::path& img_path) {
         }
 
         //compose processed img name using static counter
-        std::string processed_img_path(config_.root_path.string());
+        std::string processed_img_path(config_.output_path.string());
         processed_img_path.append("processed_");
 
         processed_img_path.append(std::to_string(++unique_img_id_));
