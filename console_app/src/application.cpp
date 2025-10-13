@@ -1,5 +1,4 @@
 #include "application.h"
-#include <dlfcn.h>
 #include <stdexcept>
 #include <iostream>
 #include <fstream>
@@ -8,6 +7,11 @@
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
 
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <dlfcn.h>
+#endif
 
 Application::Application(const AppConfig& config) : config_(config) {
     if (!fs::is_directory(config_.root_path) || !fs::is_directory(config_.output_path)) {
@@ -18,15 +22,28 @@ Application::Application(const AppConfig& config) : config_(config) {
 
 Application::~Application() {
     if(lib_handle_) {
+        #ifdef _WIN32
+        FreeLibrary(static_cast<HMODULE>(handle));
+        #else
         dlclose(lib_handle_);
+        #endif
     }
 }
 void Application::LoadSharedLibrary() {
+
+    #ifdef _WIN32
+    lib_handle_ = LoadLibrary(config_.library_path.c_str());
+    #else
     lib_handle_ = dlopen(config_.library_path.c_str(),RTLD_NOW);
+    #endif
     if (!lib_handle_) {
         throw std::runtime_error("Failed to load library");
     }
+    #ifdef _WIN32
+    detect_face_ptr_ = reinterpret_cast<DetectFacesFunc>(GetProcAddress(static_cast<HMODULE>(lib_handle_), "detect"));
+    #else
     detect_face_ptr_ = reinterpret_cast<DetectFacesFunc>(dlsym(lib_handle_,"detect"));
+    #endif
     if(!detect_face_ptr_) {
         throw std::runtime_error("Failed to find function 'detect' in library");
     }

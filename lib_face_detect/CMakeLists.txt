@@ -10,6 +10,7 @@ target_include_directories(lib_face_detect_api INTERFACE
 
 add_library(face_detect SHARED src/face_detect.cpp)
 
+target_compile_definitions(face_detect PRIVATE FACE_DETECT_EXPORT)
 
 target_link_libraries(face_detect PRIVATE lib_face_detect_api ${OpenCV_LIBS})
 
