@@ -2,8 +2,8 @@
 #define FACE_DETECT_API_H
 
 struct FaceRect{
-    int x1;
-    int y1;
+    int x;
+    int y;
     int w;
     int h;
 };

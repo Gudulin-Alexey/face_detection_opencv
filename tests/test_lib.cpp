@@ -13,8 +13,8 @@ TEST(FaceDetectionTest, SingleFace) {
     EXPECT_EQ(detect("single_face.jpg", buf,bufsize),1);
     auto& rect = buf[0];
 
-    EXPECT_TRUE((rect.x1 >= 340) && (rect.x1 <= 380));
-    EXPECT_TRUE((rect.y1 >= 85) && (rect.y1 <= 120));
+    EXPECT_TRUE((rect.x >= 340) && (rect.x <= 380));
+    EXPECT_TRUE((rect.y >= 85) && (rect.y <= 120));
     EXPECT_TRUE((rect.w >= 120) && (rect.w <= 160));
     EXPECT_TRUE((rect.h >= 145) && (rect.h <= 185));
 }
@@ -26,8 +26,8 @@ TEST(FaceDetectionTest, MultiFace) {
     EXPECT_GT(count,5);
     for (int i = 0; i < count; i++) {
         auto& rect = buf[0];
-        EXPECT_GE(rect.x1, 0);
-        EXPECT_GE(rect.y1, 0);
+        EXPECT_GE(rect.x, 0);
+        EXPECT_GE(rect.y, 0);
         EXPECT_GT(rect.w, 10);
         EXPECT_GT(rect.h, 10);
     }

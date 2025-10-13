@@ -101,8 +101,8 @@ Json::Value Application::ProcessOneImage(const fs::path& img_path) {
     for (int i = 0; i < count; i++) {
         // fill json object for every tetected face
         Json::Value detection;
-        detection["x"] = faceBuf_[i].x1;
-        detection["y"] = faceBuf_[i].y1;
+        detection["x"] = faceBuf_[i].x;
+        detection["y"] = faceBuf_[i].y;
         detection["witdh"] = faceBuf_[i].w;
         detection["heigh"] = faceBuf_[i].h;
         val["faces"].append(detection);
@@ -117,7 +117,7 @@ Json::Value Application::ProcessOneImage(const fs::path& img_path) {
         
         for (int i = 0; i < count; i++) {
             //scale detected face rectangle to new image
-            cv::Rect blur_rect(faceBuf_[i].x1 * config_.resize_scale, faceBuf_[i].y1 * config_.resize_scale, faceBuf_[i].w * config_.resize_scale, faceBuf_[i].h * config_.resize_scale);
+            cv::Rect blur_rect(faceBuf_[i].x * config_.resize_scale, faceBuf_[i].y * config_.resize_scale, faceBuf_[i].w * config_.resize_scale, faceBuf_[i].h * config_.resize_scale);
             //blur every rectangle with face
             BlureImageRect(processed_img, blur_rect, BLUR_KERNEL_DIV);
         }

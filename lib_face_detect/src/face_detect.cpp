@@ -110,8 +110,8 @@ int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
         for (int i=0; i < faces_count; i++) {
             //Fill boundong boxes of detected faces for output
             cv::Rect final_box = all_found_boxes[final_indices[i]];
-            face_rect_buf[i].x1 = final_box.x;
-            face_rect_buf[i].y1 = final_box.y;
+            face_rect_buf[i].x = final_box.x;
+            face_rect_buf[i].y = final_box.y;
             face_rect_buf[i].w = final_box.width;
             face_rect_buf[i].h = final_box.height;
         }
