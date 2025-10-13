@@ -54,6 +54,8 @@ cv::Ptr<cv::FaceDetectorYN>& GetThreadLocalDetector() {
 
 int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
 {
+    if (buf_size == 0 || face_rect_buf == NULL)
+        return 0;
     try {
         int faces_count = 0;
 
