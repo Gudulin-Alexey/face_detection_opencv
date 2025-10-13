@@ -74,7 +74,6 @@ int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
         do {
             cv::resize(img,resized,cv::Size(), current_scale, current_scale, cv::INTER_AREA);
             detector->setInputSize(resized.size()); // Set input size for model so it can handle our img
-            detector->setTopK(buf_size);        // Set max detected boxes
 
             cv::Mat faces;
             detector->detect(resized, faces);
