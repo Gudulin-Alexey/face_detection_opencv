@@ -8,7 +8,7 @@ target_include_directories(lib_face_detect_api INTERFACE
     $<INSTALL_INTERFACE:inc>
 )
 
-add_library(face_detect MODULE src/face_detect.cpp)
+add_library(face_detect SHARED src/face_detect.cpp)
 
 
 target_link_libraries(face_detect PRIVATE lib_face_detect_api ${OpenCV_LIBS})
