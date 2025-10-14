@@ -70,6 +70,39 @@ void Application::FindImageFiles() {
         }
     }
 }
+void Application::ProcessImageWorker() {
+    std::cout <<"start new thread"<<std::endl;
+    while (1) {
+        int id = unique_img_id_.fetch_add(1);
+        if (id >= image_paths_.size())
+            return;
+        fs::path img_path = image_paths_[id];
+        Json::Value result = ProcessOneImage(img_path, id);
+        std::lock_guard<std::mutex> lock(processed_results_mtx_);
+        processed_results_["processed_images"].append(result);
+    }
+}
+
+void Application::WriteResultsToFile() {
+    Json::StreamWriterBuilder builder;
+    const std::unique_ptr<Json::StreamWriter> writer(builder.newStreamWriter());
+    std::string result_file_name(config_.output_path.string());
+    result_file_name.append("result.json");
+    std::ofstream result_file(result_file_name);
+    writer->write(processed_results_, &result_file);
+}
+
+void Application::ProcessImagesMultiTrhead() {
+    processed_results_["processed_images"] = Json::arrayValue;
+    std::vector<std::thread> worker_threads;
+    for (int i = 0; i < config_.thread_num; i++) {
+        worker_threads.emplace_back(std::thread(&Application::ProcessImageWorker, this));
+    }
+    for (auto& thread : worker_threads) {
+        thread.join();
+    }
+}
+
 
 void Application::ProcessImages() {
     //using stream writer so not needed to store whole dom in memory in case we parse large amount of images
@@ -87,9 +120,9 @@ void Application::ProcessImages() {
             result_file << ",\n";         // add comma between json objects
         }
 
-        Json::Value val = ProcessOneImage(img_path);
-
-        writer->write(val, &result_file);
+        Json::Value val = ProcessOneImage(img_path, ++unique_img_id_);
+        if (!val.empty())
+            writer->write(val, &result_file);
 
     }
     result_file << "]\n}\n";                            //direct write to close json brackets
@@ -108,18 +141,21 @@ void BlureImageRect(cv::Mat& img, const cv::Rect& face_rect, float factor) {
     cv::GaussianBlur(img(face_rect), img(face_rect), cv::Size(kW,kH), 0);
 }
 
-Json::Value Application::ProcessOneImage(const fs::path& img_path) {
+Json::Value Application::ProcessOneImage(const fs::path& img_path, int unique_id) {
     // call detec function from dinamicly loaded library
-    int count = detect_face_ptr_(img_path.c_str(), faceBuf_, sizeof(faceBuf_)/sizeof(FaceRect));
+    FaceRect faceBuf[MAX_FACES_PER_IMAGE];
+    int count = detect_face_ptr_(img_path.c_str(), faceBuf, sizeof(faceBuf)/sizeof(FaceRect));
     Json::Value val;
+    if (count < 0)
+        return val;
     val["faces"] = Json::arrayValue;
     for (int i = 0; i < count; i++) {
         // fill json object for every tetected face
         Json::Value detection;
-        detection["x"] = faceBuf_[i].x;
-        detection["y"] = faceBuf_[i].y;
-        detection["witdh"] = faceBuf_[i].w;
-        detection["heigh"] = faceBuf_[i].h;
+        detection["x"] = faceBuf[i].x;
+        detection["y"] = faceBuf[i].y;
+        detection["witdh"] = faceBuf[i].w;
+        detection["heigh"] = faceBuf[i].h;
         val["faces"].append(detection);
     }
     val["original_img"] = img_path.c_str();
@@ -127,32 +163,39 @@ Json::Value Application::ProcessOneImage(const fs::path& img_path) {
     try {
         cv::Mat img = cv::imread(img_path.c_str());
         cv::Mat processed_img;
-        //resizing image with scale factor 0.5 using INTER_AREA since it looks best for shrinking
-        cv::resize(img, processed_img, cv::Size(), config_.resize_scale, config_.resize_scale, cv::INTER_AREA);
-        
-        for (int i = 0; i < count; i++) {
-            //scale detected face rectangle to new image
-            cv::Rect blur_rect(faceBuf_[i].x * config_.resize_scale, faceBuf_[i].y * config_.resize_scale, faceBuf_[i].w * config_.resize_scale, faceBuf_[i].h * config_.resize_scale);
-            //blur every rectangle with face
-            BlureImageRect(processed_img, blur_rect, BLUR_KERNEL_DIV);
+        cv::Size img_size = img.size();
+        if (img_size.width > 5 && img_size.height > 5) { //make assumption that there is no faces on such small img and we do not resize it further 
+            //resizing image with scale factor 0.5 using INTER_AREA since it looks best for shrinking
+            cv::resize(img, processed_img, cv::Size(), config_.resize_scale, config_.resize_scale, cv::INTER_AREA);
+            
+            for (int i = 0; i < count; i++) {
+                //scale detected face rectangle to new image
+                cv::Rect blur_rect(faceBuf[i].x * config_.resize_scale, faceBuf[i].y * config_.resize_scale, faceBuf[i].w * config_.resize_scale, faceBuf[i].h * config_.resize_scale);
+                //blur every rectangle with face
+                BlureImageRect(processed_img, blur_rect, BLUR_KERNEL_DIV);
+            }
+        } else {
+            processed_img = img.clone();
         }
 
         //compose processed img name using static counter
         std::string processed_img_path(config_.output_path.string());
         processed_img_path.append("processed_");
 
-        processed_img_path.append(std::to_string(++unique_img_id_));
+        processed_img_path.append(std::to_string(unique_id));
         processed_img_path.append(".jpg");
 
         cv::imwrite(processed_img_path, processed_img);
         val["processed_img"] = processed_img_path;
     } catch (const std::exception& e) {
         std::cerr << "Error:" << e.what() << std::endl;
+        std::cerr << "ImgName:" << img_path.c_str() << std::endl;
     }
     return val;
 }
 
 void Application::Run() {
     FindImageFiles();
-    ProcessImages();
+    ProcessImagesMultiTrhead();
+    WriteResultsToFile();
 }

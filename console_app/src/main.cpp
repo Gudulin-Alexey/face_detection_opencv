@@ -7,9 +7,10 @@
 
 int main(int argc, char** argv) {
     const std::string keys =
-    "{help h usage ?   |      | print this message   }"
-    "{@input           |      | (Required) path to working folder to find images}"
-    "{output o         |      | (Optional) folder where to store results by defult equial to folder arg}"
+    "{help h usage ?   | | dont forget '=' when pasing arguments for example -j=4   }"
+    "{@input           | | (Required) path to working folder to find images}"
+    "{output o         | | (Optional) folder where to store results by defult equial to folder arg}"
+    "{threads j        |1| (Optional) number of threads to run app}"
     ;
     cv::CommandLineParser parser(argc, argv, keys);
     if (parser.has("help")){
@@ -24,6 +25,7 @@ int main(int argc, char** argv) {
     try {
         std::string root_path = parser.get<std::string>("@input");
         std::string out_path = parser.get<std::string>("output");
+        int num_of_threads = parser.get<int>("threads");
 
         if (root_path.empty()) {
             root_path = fs::current_path().parent_path();
@@ -34,6 +36,8 @@ int main(int argc, char** argv) {
         AppConfig config;
         config.root_path = root_path;
         config.output_path = out_path;
+        if (num_of_threads > 0)
+            config.thread_num = num_of_threads;
         Application app(config);
         app.Run();
     } catch(const std::exception& e){

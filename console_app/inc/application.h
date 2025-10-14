@@ -4,6 +4,10 @@
 #include <string>
 #include <filesystem>
 #include <vector>
+#include <thread>
+#include <atomic>
+#include <mutex>
+
 #include <json/json.h>
 
 #include "face_detect_api.h"
@@ -20,6 +24,7 @@ struct AppConfig {
 #endif
     std::string output_filename = "result.json";
     float resize_scale = 0.5;
+    unsigned int thread_num = 1;
 };
 class Application
 {
@@ -32,20 +37,23 @@ private:
     void LoadSharedLibrary();
     void FindImageFiles();
     void ProcessImages();
-    Json::Value ProcessOneImage(const fs::path&);
+    void ProcessImagesMultiTrhead();
+    void ProcessImageWorker();
+    void WriteResultsToFile();
+    Json::Value ProcessOneImage(const fs::path&, int);
 
     
     const AppConfig config_;
     std::vector<fs::path> image_paths_;
-
+    
     static constexpr int MAX_FACES_PER_IMAGE = 100;
     static constexpr float BLUR_KERNEL_DIV = 2.0f;
 
-    int unique_img_id_ = 0;
-
+    std::atomic<int> unique_img_id_ = 0;
+    std::mutex processed_results_mtx_;
+    Json::Value processed_results_;
 
     void* lib_handle_ = nullptr;
     DetectFacesFunc detect_face_ptr_ = nullptr;
-    FaceRect faceBuf_[MAX_FACES_PER_IMAGE];
 };
 #endif //APPLICATION_H
