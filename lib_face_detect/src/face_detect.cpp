@@ -61,14 +61,15 @@ int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
 
         cv::Ptr<cv::FaceDetectorYN> detector = GetThreadLocalDetector(); // Use thread_local FaceDetectorYN insted of static so it can be thread save
         cv::Mat img = cv::imread(img_path);
+        cv::Size img_size = img.size();
         //since yunet model can detect faces from 10x10 to 320x320 in case of huge face on image need to resize it to smaller size 
         cv::Mat resized;
         float current_scale = 1;
 
         //Select scale factor if image is biger 3 times more the scale factor is 3 if less then scale direct to  MAX_DETECTED_SIZE
         float scale_factor = std::min(DEFAULT_SCALE_FACTOR,
-            std::max(static_cast<float>(img.size().width) / MAX_DETECTED_SIZE.first,
-            static_cast<float>(img.size().height) / MAX_DETECTED_SIZE.second)
+            std::max(static_cast<float>(img_size.width) / MAX_DETECTED_SIZE.first,
+            static_cast<float>(img_size.height) / MAX_DETECTED_SIZE.second)
         );
 
         std::vector<cv::Rect> all_found_boxes;
@@ -80,18 +81,25 @@ int detect(const char* img_path, FaceRect* face_rect_buf, int buf_size)
             cv::Mat faces;
             detector->detect(resized, faces);
             for (int i=0; i < faces.rows; i++) {
-                int x = static_cast<int>(faces.at<float>(i, 0));
-                int y = static_cast<int>(faces.at<float>(i, 1));
-                int w = static_cast<int>(faces.at<float>(i, 2));
-                int h = static_cast<int>(faces.at<float>(i, 3));
+                int x = static_cast<int>(faces.at<float>(i, 0)/current_scale);
+                int y = static_cast<int>(faces.at<float>(i, 1)/current_scale);
+                int w = static_cast<int>(faces.at<float>(i, 2)/current_scale);
+                int h = static_cast<int>(faces.at<float>(i, 3)/current_scale);
+
+                //make box fit image boundaries
+                x = std::max(0, x);
+                y = std::max(0, y);
+                w = std::min(w, img_size.width - x);
+                h = std::min(h, img_size.height - y);
 
                 float confidence = faces.at<float>(i, 14);
+
                 //construct rectangle of found face box according to current scale
                 cv::Rect face_box(
-                    static_cast<int>(x/current_scale),
-                    static_cast<int>(y/current_scale),
-                    static_cast<int>(w/current_scale),
-                    static_cast<int>(h/current_scale)
+                    static_cast<int>(x),
+                    static_cast<int>(y),
+                    static_cast<int>(w),
+                    static_cast<int>(h)
                 );
                 all_found_boxes.push_back(face_box);        //save all found rectangles
                 all_confidence.push_back(confidence);
