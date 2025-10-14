@@ -31,7 +31,20 @@ TEST(FaceDetectionTest, MultiFace) {
         EXPECT_GT(rect.w, 10);
         EXPECT_GT(rect.h, 10);
     }
-    
+}
+
+TEST(FaceDetectionTest, FaceOnEdge) {
+    constexpr int bufsize = 100;
+    FaceRect buf[bufsize];
+    int count = detect("edge_face.jpg", buf,bufsize);
+    EXPECT_GT(count,1);
+    for (int i = 0; i < count; i++) {
+        auto& rect = buf[i];
+        EXPECT_GE(rect.x, 0);
+        EXPECT_GE(rect.y, 0);
+        EXPECT_GT(rect.w, 10);
+        EXPECT_GT(rect.h, 10);
+    }
 }
 
 TEST(FaceDetectionTest, FacePosition) {
