@@ -3,6 +3,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <unordered_set>
 
 #include <opencv2/imgproc.hpp>
 #include <opencv2/imgcodecs.hpp>
@@ -49,26 +50,23 @@ void Application::LoadSharedLibrary() {
     }
 }
 
+std::string ToLowCase(const std::string& s) {
+    std::string lower_str = s;
+    std::transform(lower_str.begin(),
+        lower_str.end(),
+        lower_str.begin(),
+        [](unsigned char c){ return std::tolower(c);}
+    );
+    return lower_str;
+}
+
 void Application::FindImageFiles() {
-    const std::vector<std::string> image_extentions = {".jpg", ".jpeg", ".jpe", ".png", ".bmp", ".jp2", ".ppm", ".sr", ".ras", ".tiff", ".tif"};
+    const std::unordered_set<std::string> image_extentions{".jpg", ".jpeg", ".jpe", ".png", ".bmp", ".jp2", ".ppm", ".sr", ".ras", ".tiff", ".tif"};
     for (const auto& entry : fs::recursive_directory_iterator(config_.root_path)) {
         if (entry.is_regular_file() && !fs::is_empty(entry)) {
-            std::string extention = entry.path().extension();
-            std::transform(extention.begin(),                   //file extention is case insesetive
-                extention.end(),                                // convert extention to lowercase
-                extention.begin(),
-                [](unsigned char c){ return std::tolower(c);}
-            );
-            bool is_img = false;
-            for (const auto& ext : image_extentions) {
-                if (ext == extention) {
-                    is_img = true;
-                    break;
-                }
-            }
-            if (is_img) {
+            std::string extention = ToLowCase(entry.path().extension());
+            if (image_extentions.find(extention) != image_extentions.end())
                 image_paths_.push_back(entry);
-            }
         }
     }
 }
