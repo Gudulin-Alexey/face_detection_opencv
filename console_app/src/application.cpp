@@ -24,7 +24,7 @@ Application::Application(const AppConfig& config) : config_(config) {
 Application::~Application() {
     if(lib_handle_) {
         #ifdef _WIN32
-        FreeLibrary(static_cast<HMODULE>(handle));
+        FreeLibrary(static_cast<HMODULE>(lib_handle_));
         #else
         dlclose(lib_handle_);
         #endif
@@ -64,7 +64,7 @@ void Application::FindImageFiles() {
     const std::unordered_set<std::string> image_extentions{".jpg", ".jpeg", ".jpe", ".png", ".bmp", ".jp2", ".ppm", ".sr", ".ras", ".tiff", ".tif"};
     for (const auto& entry : fs::recursive_directory_iterator(config_.root_path)) {
         if (entry.is_regular_file() && !fs::is_empty(entry)) {
-            std::string extention = ToLowCase(entry.path().extension());
+            std::string extention = ToLowCase(entry.path().extension().string());
             if (image_extentions.find(extention) != image_extentions.end())
                 image_paths_.push_back(entry);
         }
@@ -144,7 +144,7 @@ void BlureImageRect(cv::Mat& img, const cv::Rect& face_rect, float factor) {
 Json::Value Application::ProcessOneImage(const fs::path& img_path, int unique_id) {
     // call detec function from dinamicly loaded library
     FaceRect faceBuf[MAX_FACES_PER_IMAGE];
-    int count = detect_face_ptr_(img_path.c_str(), faceBuf, sizeof(faceBuf)/sizeof(FaceRect));
+    int count = detect_face_ptr_(img_path.string().c_str(), faceBuf, MAX_FACES_PER_IMAGE);
     Json::Value val;
     if (count < 0)
         return val;
@@ -158,10 +158,10 @@ Json::Value Application::ProcessOneImage(const fs::path& img_path, int unique_id
         detection["heigh"] = faceBuf[i].h;
         val["faces"].append(detection);
     }
-    val["original_img"] = img_path.c_str();
+    val["original_img"] = img_path.string();
     val["face_count"] = count;
     try {
-        cv::Mat img = cv::imread(img_path.c_str());
+        cv::Mat img = cv::imread(img_path.string());
         cv::Mat processed_img;
         cv::Size img_size = img.size();
         if (img_size.width > 5 && img_size.height > 5) { //make assumption that there is no faces on such small img and we do not resize it further 
@@ -189,7 +189,7 @@ Json::Value Application::ProcessOneImage(const fs::path& img_path, int unique_id
         val["processed_img"] = processed_img_path;
     } catch (const std::exception& e) {
         std::cerr << "Error:" << e.what() << std::endl;
-        std::cerr << "ImgName:" << img_path.c_str() << std::endl;
+        std::cerr << "ImgName:" << img_path.string() << std::endl;
     }
     return val;
 }

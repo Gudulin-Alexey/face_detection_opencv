@@ -1,5 +1,4 @@
 #include <string>
-#include <dlfcn.h>
 #include <iostream>
 #include <opencv2/core/utility.hpp>
 
@@ -28,7 +27,7 @@ int main(int argc, char** argv) {
         int num_of_threads = parser.get<int>("threads");
 
         if (root_path.empty()) {
-            root_path = fs::current_path().parent_path();
+            root_path = parser.getPathToApplication();
         }
         if (out_path.empty() || out_path == "true") {
             out_path = root_path;

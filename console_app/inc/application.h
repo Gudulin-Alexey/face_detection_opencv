@@ -18,7 +18,7 @@ struct AppConfig {
     fs::path root_path;
     fs::path output_path;
 #ifdef _WIN32
-    std::string library_path = "face_detect.dll";
+    std::string library_path = "libface_detect.dll";
 #else
     std::string library_path = "./libface_detect.so";
 #endif
