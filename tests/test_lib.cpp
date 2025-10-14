@@ -25,7 +25,7 @@ TEST(FaceDetectionTest, MultiFace) {
     int count = detect("many_faces.jpg", buf,bufsize);
     EXPECT_GT(count,5);
     for (int i = 0; i < count; i++) {
-        auto& rect = buf[0];
+        auto& rect = buf[i];
         EXPECT_GE(rect.x, 0);
         EXPECT_GE(rect.y, 0);
         EXPECT_GT(rect.w, 10);
