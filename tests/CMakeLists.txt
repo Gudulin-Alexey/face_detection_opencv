@@ -8,3 +8,5 @@ gtest_discover_tests(tests)
 
 add_custom_command(TARGET tests POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${CMAKE_CURRENT_SOURCE_DIR}/images/ $<TARGET_FILE_DIR:tests>)
+add_custom_command(TARGET tests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:face_detect> $<TARGET_FILE_DIR:tests>)
